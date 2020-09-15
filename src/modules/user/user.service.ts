@@ -1,6 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { UserRepository } from './user.repository';
-import { MapperService } from 'src/shared/mapper.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './user.entity';
 import { UserDto } from './dto/user.dto';
@@ -12,11 +11,10 @@ import { Role } from '../role/role.entity';
 export class UserService {
     constructor (
         @InjectRepository(UserRepository)
-        private readonly _userRepository: UserRepository,
-        private readonly _mapperService: MapperService
+        private readonly _userRepository: UserRepository
     ) {}
 
-    async get(id: number): Promise<UserDto> {
+    async get(id: number): Promise<User> {
         if (!id) {
             throw new BadRequestException('id must be sent');
         }
@@ -29,21 +27,18 @@ export class UserService {
             throw new NotFoundException();
         }
 
-        return this._mapperService.map<User, UserDto>(user, new UserDto());
+        return user;
     }
 
-    async getAll(): Promise<UserDto[]> {
+    async getAll(): Promise<User[]> {
         const users = await this._userRepository.find({
             where: { status: 'ACTIVE' },
         });
 
-        return this._mapperService.mapCollection<User, UserDto>(
-            users,
-            new UserDto()
-        );
+        return users;
     }
 
-    async create(user: User): Promise<UserDto> {
+    async create(user: User): Promise<User> {
         const details = new UserDetails();
         user.details = details;
 
@@ -52,13 +47,10 @@ export class UserService {
         user.roles = [defaultRole];
 
         const savedUser = await this._userRepository.save(user);
-        return this._mapperService.map<User, UserDto>(
-            savedUser,
-            new UserDto()
-        );
+        return savedUser;
     }
 
-    async update(id: number, user: User): Promise<UserDto> {
+    async update(id: number, user: User): Promise<User> {
         const updatedUser = await this._userRepository.update(id, user);
         return this.get(id);
     }
